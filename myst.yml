@@ -1,0 +1,11 @@
+version: 1
+project:
+  # title:
+  # description:
+  keywords: []
+  authors: []
+  # github:
+  # bibliography: []
+site:
+  template: book-theme
+  

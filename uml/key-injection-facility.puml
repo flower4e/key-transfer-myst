@@ -1,0 +1,216 @@
+@startuml usecase_key_transfer
+title Use Case Key Transfer
+
+:Administrator: as admin
+:Operator: as op
+:Card Reader: as reader
+:Card/Device: as app
+:Key Distribution Station: as station
+:HSM: as hsm
+:Terminal: as term
+
+admin -- station
+station -- reader
+station -- hsm
+app -down- op
+app -- term
+reader -right- app : APDU
+
+
+station -left- (OS Linux)
+station -right- (terminal-kdc)
+hsm -- (BDK)
+admin -up- (Prepares key data for transfer)
+admin -up- (Manages Key Distribution Station)
+admin -left- (Manages Card_Device)
+op -right- (Claims and confirms key transfer from card reader)
+op -down- (Confirms key load on terminal)
+app -up- (Receives data from Card Reader - APDU)
+app -- (Transmits data to a terminal)
+reader -left- (Transmits Card_Device data - APDU)
+term -- (Accepts a key from Card_Device)
+@enduml
+
+
+------------------------------------------------------------------------------------------------
+
+@startuml wrap-ppk
+title Key Transfer (Wrap PPK)
+autonumber
+participant Administrator as 1
+participant Key_Distribution_Station as 2
+participant HSM as 3
+participant Card_Reader as 4
+participant Operator as 5
+participant Card_Device as 6
+participant Terminal as 7
+
+group Load BDK
+    1 -> 2 : Key Component 1 & 2, key tag
+    2 -> 3 : Key Component 1 & 2, key tag, importSecretKey
+    3 --> 2 : BDK reference
+end
+
+group Wrap PPK
+5 -> 2 : Terminal ID, key type РРК - wrap
+2 -> 3 : DeriveKey request
+3 --> 2 : Crypto key
+end
+
+group Transfer РРК
+5 -> 6 : Key transfer request
+6 -> 5 : Biometrics request
+5 --> 6 : Biometrics
+6 -> 4 : PPK transfer request
+2 --> 4 : PPK
+4 --> 6 : PPK, KVC via APDU
+end
+ 
+group Load PPK to Terminal
+6 -> 7 : Terminal ID request
+7 --> 6 : Terminal ID 
+6 -> 6 : Derive PPK
+6 -> 7 : If Terminal id OK -> load PPK
+end
+
+
+@enduml
+
+------------------------------------------------------------------------------------------------
+
+@startuml export-ppk-tmk
+title Key Transfer (Export РРК / ТМК)
+autonumber
+participant Administrator as 1
+participant Key_Distribution_Station as 2
+participant HSM as 3
+participant Card_Reader as 4
+participant Operator as 5
+participant Card_Device_1 as 6
+participant Card_Device_2 as cd2
+participant Terminal as 7
+
+
+group Load BDK
+    1 -> 2 : Key Component 1 & 2, key tag
+    2 -> 3 : Key Component 1 & 2, key tag, importSecretKey
+    3 --> 2 : BDK reference
+end
+
+group Export РРК / ТМК
+5 -> 2 : Terminal ID, key type РРК / ТМК - export
+2 -> 3 : DeriveKey request
+3 --> 2 : Crypto key 
+2 -> 2 : Components Separation
+end
+
+group Transfer РРК / ТМК
+    5 -> 6 : РРК / ТМК transfer request
+    6 -> 5 : Biometrics request
+    5 --> 6 : Biometrics
+    6 -> 4 : РРК / ТМК transfer request
+    2 --> 4 : Component 1
+    4 --> 6 : Component 1, KVC via APDU
+    5 -> cd2 : Component 2 transfer request
+    cd2 -> 5 : Biometrics request
+    5 --> cd2 : Biometrics
+    cd2 -> 4 : Component 2 transfer request
+    2 --> 4 : Component 2
+    4 --> cd2 : Component 2, KVC via APDU
+end
+
+group Load РРК / ТМК
+    6 -> 7 : Terminal ID request
+    7 --> 6 : Terminal ID 
+    6 -> 6 : Derive PPK
+    6 -> 7 : If Terminal id OK -> load Component 1
+    cd2 -> 7 : Terminal ID request
+    7 --> cd2 : Terminal ID 
+    cd2 -> cd2 : Derive PPK
+    cd2 -> 7 : If Terminal id OK -> load Component 2
+end
+@enduml
+
+------------------------------------------------------------------------------------------------
+
+
+@startuml plain_transfer
+title Plain transfer, No authentication
+autonumber
+participant Card_Reader as 1
+participant Card_Device as 2
+
+1 -> 2 : SELECT FILE
+2 --> 1 :  File Control Information || 9000
+1 -> 2 : PUT DATA
+2 --> 1 :  9000
+@enduml
+
+
+------------------------------------------------------------------------------------------------
+
+
+@startuml plain_load_terminal
+title POS Key Load
+autonumber
+participant POS as 1
+participant Card_Device as 2
+
+1 -> 2 : SELECT FILE
+2 --> 1 : File Control Information || 9000
+1 -> 2 : EXTERNAL AUTHENTICATE (terminalID)
+2 --> 1 : Hash || 9000
+note left: Hash: sha256
+1 -> 1 : Verification
+1 -> 2 : GET DATA
+2 --> 1 :  90Key BER structure || 900000
+@enduml
+
+-------------------------------------------------
+
+@startuml load-bdk
+title Load BDK
+autonumber
+participant Administrator as 1
+participant Key_Distribution_Station as 2
+participant HSM as 3
+
+1 -> 2 : Key Component 1 & 2, key tag
+2 -> 3 : Key Component 1 & 2, key tag, importSecretKey
+3 --> 2 : BDK reference
+@enduml
+
+------------------------------------------------------------------------------
+
+@startuml load-ppk-terminal-wrap-ppk
+title Load PPK to Terminal (Wrap PPK)
+autonumber
+participant Card_Device as 6
+participant Terminal as 7
+
+6 -> 7 : Terminal ID request
+7 --> 6 : Terminal ID 
+6 -> 6 : Derive PPK
+6 -> 7 : If Terminal id OK -> load PPK
+@enduml
+
+
+-----------------------------------------
+
+@startuml load-terminal-ppk-tmk
+title Terminal Load РРК / ТМК (Export РРК / ТМК)
+autonumber
+participant Card_Device_1 as 6
+participant Card_Device_2 as cd2
+participant Terminal as 7
+
+6 -> 7 : Terminal ID request
+7 --> 6 : Terminal ID 
+6 -> 6 : Derive PPK
+6 -> 7 : If Terminal id OK -> load Component 1
+cd2 -> 7 : Terminal ID request
+7 --> cd2 : Terminal ID 
+cd2 -> cd2 : Derive PPK
+cd2 -> 7 : If Terminal id OK -> load Component 2
+
+@enduml
