@@ -1,11 +1,25 @@
 version: 1
 project:
-  # title:
-  # description:
-  keywords: []
-  authors: []
-  # github:
-  # bibliography: []
+  title: Key Transfer System
+  subject: DataMax Project
+  description: Система за пренос на криптографски данни
+  authors:
+  - name: Tsvetelina Georgieva
+    roles:
+      - writing
+      - review
+      - visualisation
+    email: cgeorgieva@datamax.bg
+github: https://github.com/flower4e/key-transfer-myst.git
+keywords: 3DS, security, acquiring
+license: MIT
+exports:
+  - format: docx
+    output: exports/apdu-spec.docx
+  - format: pdf
+    template: volcanica
+    article_type: Report
+    output: exports/apdu-spec.pdf
 site:
   template: book-theme
   
